@@ -1,0 +1,10 @@
+void *l_create();
+int l_insert_first(void **list, void *val);
+int l_insert_last(void** list, void* val);
+void l_delete(void **list, int idx, void (*free_info)(void *));
+void *l_remove(void **list, int idx);
+int l_contains(void *list, void *val, int (*comp)(void *, void*));
+void l_print(void *list, void(*afisare)(void*));
+int l_length(void *list);
+void l_free(void **list, void (*free_info)(void *));
+int l_empty(void *list);
