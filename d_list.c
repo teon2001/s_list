@@ -1,16 +1,11 @@
-#include "list.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <errno.h>
 
-typedef struct {
-    int index;
-    int size_info;
-    void* inform;
-} Info;
+#include "list.h"
 
 typedef struct node {
-    Info *info;
+    void *info;
     struct node* next;
     struct node* prev;
 } Node;
@@ -21,10 +16,8 @@ void *l_create() {
 
 static Node *create_node(void *val) {
     Node *node = malloc(sizeof(Node));
-    node->info = calloc(1, sizeof(Info));
-    node->info->inform = val;
-    node->next = NULL;
-    node->prev = NULL;
+    node->info = val;
+    node->next = node->prev = node;
     return node;
 }
 
@@ -34,129 +27,144 @@ static Node *conv(void *list) {
 
 int l_insert_first(void **list, void *val) {
     if(val == NULL)  
-        return -EKEYREJECTED;;
+        return -EINVAL;
     Node* nod_nou = create_node(val);
     Node* li = conv(*list);
     if(li == NULL) {
         li = nod_nou;
-        *list = (void*)li;
+        nod_nou->prev = nod_nou;
+        nod_nou->next = nod_nou;
+        *list = li;
         return 0;
-    }
+    } 
+
     nod_nou->next = li;
+    nod_nou->prev = li->prev;
+    li->prev->next = nod_nou;
     li->prev = nod_nou;
     li = nod_nou;
+
     *list = (void*)li;
     return 0;
 }
 
 int l_insert_last(void** list, void* val) {
     if(val == NULL) 
-        return -EKEYREJECTED;
+        return -EINVAL;
     Node* li = conv(*list);
     Node* node = create_node(val);
     if(li == NULL) {
         li = node; 
+        node->prev = node;
+        node->next = node;
         *list = li;
         return 0; 
     } 
-
-    Node *t = li, *p = li->next;
-    while(p != NULL) {
-        t = t->next;
-        p = p->next;
-    }
-    node->next = NULL;
-    t->next = node;
-    node->prev = t;
+    node->prev = li->prev;
+    li->prev->next = node;
+    node->next = li;
+    li->prev = node;
     *list = li;
     return 0;
 }
 
-static void free_node(Node *list, void (*free_info)(void *)) {
-    free_info(list->info->inform);
-    free(list);
+static void free_node(Node *node, void (*free_info)(void *)) {
+    free_info(node->info);
+    free(node);
 }
 
 int l_length(void *list) {
+    if(list  == NULL) 
+        return 0;
     Node* li = conv(list);
-    int contor = 0;
-    while(li != NULL) {
+    if(li == li->next) 
+        return 1;
+
+    int contor = 1;
+    Node *iter = li->next;
+   
+    while(iter != li) {
         contor++;
-        li = li->next;
+        iter = iter->next;
     }
     return contor;
 }
 
-void l_delete(void **list, int idx, void (*free_info)(void *)) {
-    if(idx >= l_length(*list)) 
-        return;
+static Node *aux(void **list, int idx) {
     Node* li = conv(*list);
     int contor = 0;
+
     if(idx == 0) {
-        li->next = NULL;
+        Node *i = li;
+        if(l_length(*list) == 1) {
+            *list = NULL;
+            return li;
+        }
+
+        li->prev->next = li->next;
+        li->next->prev = li->prev;
+        
         *list = li->next;
-        free_node(li, free_info);
-        return;
+        return i;
     }
-    for(Node *t = li, *r = li->next; r != NULL; t = t->next, r = r->next) {
+    for(Node *iter1 = li, *iter2 = li->next; iter2 != li; iter1 = iter1->next, iter2 = iter2->next) {
         contor++;
         if(contor == idx) {
-            if(r->next == NULL) {
-                t->next = NULL;
+            Node *j = iter2;
+            if(iter2->next == li) {
+                iter1->next = li;
+                li->prev = iter1;
             } else {
-                t->next = r->next;
-                r->next->prev = t;
+                iter1->next = iter2->next;
+                iter2->next->prev = iter1;
             }
-            free_node(r, free_info);
-            return;
+            return j;
         }
     }
 }
 
-void *l_remove(void **list, int idx) {
-    if(list == NULL) 
-        return NULL;
-    Node* li = conv(*list);
-    int contor = 0;
-    if(idx == 0) {
-        void *s = li->info->inform;
-        li->next->prev = NULL;
-        *list = li->next;
-        free(li);
-        return s;
-    }
+int l_delete(void **list, int idx, void (*free_info)(void *)) {
+    if(idx >= l_length(*list)) 
+        return 1;
+    Node *i = aux(list, idx);
+    free_node(i, free_info);
+    return 0; 
+}
 
-    for(Node *t = li, *r = li->next; r != NULL; t = t->next, r = r->next) {
-        contor++;
-        if(contor == idx) {
-            Node* x = r->info->inform;
-            if(r->next == NULL) {
-                t->next = NULL;
-            } else {
-                t->next = r->next;
-                r->next->prev = t;
-            }
-            free(r);
-            return x;
-        }
-    }
+void *l_remove(void **list, int idx) {
+    if(idx >= l_length(*list)) 
+        return  NULL;
+    Node* i =  aux(list, idx);
+    void* j = i->info;
+    free(i);
+    return j;
 }
 
 int l_contains(void *list, void *val, int (*comp)(void *, void*)) {
     Node* li = conv(list);
-    for(; li != NULL; li = li->next) {
-        if(comp(li->info, val) == 0) {
+    if(li->info == val) return 1;
+    Node* i = li->next;
+    for(; i != li; i = i->next) {
+        if(comp(i->info, val) == 0) {
             return 1;
         }
     }
     return 0;
 }
 
-void l_print(void *list,  void(*afisare)(void*)){
+void l_print(void *list,  void(*print)(void*)){
     Node *li = conv(list);
-    Node* t = li;
-    while(t != NULL) {
-        printf("%d ", *(int*)t->info->inform);
+    if(l_length(list) == 0)
+        return;
+    if(l_length(list) == 1) {
+        print(li->info);
+        printf("\n");
+        return;
+    }
+    Node* t = li->next;
+    print(li->info);
+    while(t != li) {
+        print(t->info);
         t = t->next;
     }
     printf("\n");
@@ -164,14 +172,84 @@ void l_print(void *list,  void(*afisare)(void*)){
 
 void l_free(void **list, void (*free_info)(void *)) {
     Node* li= conv(list);
-    while(li != NULL) {
-        Node* stersul = li;
+    Node* i = li->next;
+    while(i != li) {
+        Node* rm = li;
         li = li->next;
-        free_node(stersul, free_info);
-    }
+        free_node(rm, free_info);
+    } 
+    free_node(li, free_info);
     list = NULL;
 }
 
 int l_empty(void *list) {
     return list == NULL;
+}
+
+void* get_info(void* node) {
+    Node* n = conv(node);
+    return n->info;
+}
+
+void** l_vector(void* list) {
+    void** vector = malloc(l_length(list) * sizeof(void*));
+    Node* li = conv(list);
+    int i = 1;
+    if(li == NULL) {
+        return vector;
+    }
+    vector[0] = li->info;
+    for(Node* iter = li->next; iter != li; iter = iter->next)
+        vector[i++] = iter->info;
+    return vector;
+}  
+
+//CONCATENARE EFICIENTA 
+int l_concat(void** list1, void** list2) {
+    Node* li1 = conv(*list1);
+    Node* li2 = conv(list2);
+    
+    if(li1 == NULL) {
+        li1 = li2;
+        *list1 = li1;
+        return 0;
+    }
+    if(li2 == NULL) {
+        *list1 = li1;
+        return 0;
+    }
+    Node* tail1 = li1->prev;
+    Node* tail2 = li2->prev;
+    tail1->next = li2;
+    li2->prev = tail1;
+    tail2->next = li1;
+    li1->prev = tail2;
+    list2 = NULL;
+    return 0;
+}
+
+void *l_remove_info(void **list, void *val, int (*comp)(void*, void*)) {
+    if(list == NULL) {
+        return NULL;
+    }
+    Node* li = conv(*list);
+    int contor = 0;
+    if(comp(li->info,  val) == 0) {
+        
+        void* s = li->info;
+        *list = li->next;
+        li->next = NULL;
+        free(li);
+        return s;
+    }
+    for(Node *iter2 = li->next; iter2 != li; iter2 = iter2->next) {
+        if(comp(iter2->info, val) == 0) {
+            void *w = iter2->info;
+            iter2->prev = iter2->next;
+            iter2->next->prev = iter2->prev;
+            free(iter2);
+            return w;
+        }
+    }
+    return NULL;
 }
