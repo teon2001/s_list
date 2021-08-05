@@ -212,7 +212,7 @@ void* get_info(void* node) {
     Node* n = conv(node);
     return n->info;
 }
- //
+
 void** l_to_vector(void* list) {
     void** vector = malloc(l_length(list) * sizeof(void*));
     Node* li = conv(list);
@@ -233,7 +233,20 @@ void l_free_info(void **list) {
     *list = NULL;
 }
 
-
+int l_include(void* list1, void* list2, int (*comp)(void*, void*)) {
+    Node* li1 = conv(list1);
+    Node* li2 = conv(list2);
+    // 0 -> super
+    // 1 -> nu_incluziune
+    while(comp(li1->info, li2->info) == 0) {
+        li1 = li1->next;
+        li2 = li2->next;
+    }
+    if(li1 == NULL && li2 == NULL) {
+        return 0;
+    } else 
+        return 1;
+}
 
 
 
