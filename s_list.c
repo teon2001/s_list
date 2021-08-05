@@ -103,8 +103,7 @@ void *l_remove_info(void **list, void *val, int (*comp)(void*, void*)) {
     Node* li = conv(*list);
     int contor = 0;
 
-    if(comp(li->info,  val) == 0) {
-        
+    if(comp(li->info, val) == 0) {        
         void* s = li->info;
         *list = li->next;
         li->next = NULL;
@@ -144,8 +143,11 @@ int l_contains(void *list, void *val, int (*comp)(void*, void*)) {
     // 1-lista contine val
     // 0-lista nu contine val
     Node* li = conv(list);
-    for(; li != NULL; li = li->next) {
-        if(comp(li->info, val) == 0) {
+    Node* i;
+    for(i = li; i != NULL; i = i->next) {
+        // printf("i->info %d\n", *(int*)i->info);
+        if(comp(i->info, val) == 0) {
+            printf("gasitttt\n");
             return 1;
         }
     }
@@ -182,32 +184,36 @@ void* get_value(void* list, int j) {
 
     int r = 0;
     while(iter != NULL) {
-        if(r == j) {
+        if(r == j) { 
             return iter->info;
         } else {
             r++;
             iter = iter->next;
         }
-    }
+    } 
     return NULL;
 }
 
-int l_concat(void** list1, void** list2) {
+int l_concat(void **res_list, void *list1, void *list2) {
+    Node* li1 = conv(list1);
     Node* li2 = conv(list2);
-    for(Node* iter = li2; iter != NULL; iter = iter->next) {
-        int err = l_insert_last(list1, iter->info);
+    for(Node* iter = li1; iter != NULL; iter = iter->next) {
+        int err = l_insert_last(res_list, iter->info);
         if( err != 0 ) return 1;
     }
-    list2 = NULL;
-    return 0;
+    for(Node* iter = li2; iter != NULL; iter = iter->next) {
+        int err = l_insert_last(res_list, iter->info);
+        if( err != 0 ) return 1;
+    }
+    return 0; 
 }
 
 void* get_info(void* node) {
     Node* n = conv(node);
     return n->info;
 }
-
-void** l_vector(void* list) {
+ //
+void** l_to_vector(void* list) {
     void** vector = malloc(l_length(list) * sizeof(void*));
     Node* li = conv(list);
     int i = 0;
@@ -217,12 +223,15 @@ void** l_vector(void* list) {
     return vector;
 }  
 
-
-
-
-
-
-
+void l_free_info(void **list) {
+    Node* li= conv(*list);
+    while(li != NULL) {
+        Node* rm = li;
+        li = li->next; 
+        free(rm);
+    }
+    *list = NULL;
+}
 
 
 
