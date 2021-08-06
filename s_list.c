@@ -24,9 +24,9 @@ static void *create_node(void *val) {
     return node;
 }
 
-static void *reconv(Node *list) {
-    return (void*)list;
-}
+// static void *reconv(Node *list) {
+//     return (void*)list;
+// }
 
 static void free_node(Node *node, void (*free_info)(void *)) {
     free_info(node->info);
@@ -85,6 +85,7 @@ static Node *node_for_rmv(void **list, int idx) {
             return w;
         }
     }
+    return NULL;
 }
 
 void *l_remove(void **list, int idx) {
@@ -96,22 +97,36 @@ void *l_remove(void **list, int idx) {
     return j;
 }
 
+void *l_return_node(void *list, void* val, int (*comp)(void*, void*)) {
+    if(list == NULL) 
+        return NULL;
+    Node* li = conv(list);
+
+    for(Node *i = li; i != NULL; i = i->next) {
+        if(comp(i->info, val) == 0)
+            return i->info;   
+    }
+    return NULL;
+}
+
 void *l_remove_info(void **list, void *val, int (*comp)(void*, void*)) {
     if(list == NULL) {
         return NULL;
     }
+    
     Node* li = conv(*list);
-    int contor = 0;
+    if (li == NULL) return NULL;
 
-    if(comp(li->info, val) == 0) {        
+    if(!comp(li->info, val)) {   
         void* s = li->info;
         *list = li->next;
         li->next = NULL;
         free(li);
+
         return s;
     }
     for(Node *iter1 = li, *iter2 = li->next; iter2 != NULL; iter1 = iter1->next, iter2 = iter2->next) {
-        if(comp(iter2->info, val) == 0) {
+        if(!comp(iter2->info, val)) {
             void *w = iter2->info;
             iter1->next = iter2->next;
             iter2->next = NULL;
@@ -119,6 +134,7 @@ void *l_remove_info(void **list, void *val, int (*comp)(void*, void*)) {
             return w;
         }
     }
+
     return NULL;
 }
 
@@ -145,9 +161,7 @@ int l_contains(void *list, void *val, int (*comp)(void*, void*)) {
     Node* li = conv(list);
     Node* i;
     for(i = li; i != NULL; i = i->next) {
-        // printf("i->info %d\n", *(int*)i->info);
         if(comp(i->info, val) == 0) {
-            printf("gasitttt\n");
             return 1;
         }
     }
