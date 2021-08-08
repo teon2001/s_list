@@ -1,17 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "list.h"
-#include "stack.h"
-#include "queue.h"
-#include "hashtable.h"
-#include "tester.h"
 
-void free_int(void *val) {
-    ;
+#include "heap.h"
+#include "tester_heap.h"
+
+
+void print(void* val) {
+    printf("%d ", *(int*)val);
 }
 
-int comparare(void* a, void* b) {
+int comp(void* a, void* b) {
     //0-egalitate
+    if( a == NULL) return -1;
+    if( b == NULL) return 1;
 	if((*(int*)a) > (*(int*)b)) 
         return 1;
 	if((*(int*)a) < (*(int*)b)) 
@@ -19,9 +20,44 @@ int comparare(void* a, void* b) {
 	return 0;
 }
 
-void afisare(void* info) {
-    printf("%d ", *(int*)info);
+void free_int(void *val) {
+    ;
 }
+ 
+// void test_list() {
+//     test_insert();
+//     test_remove();
+//     test_delete_empty();
+//     test_contains_length();
+//     test_concat();
+// }
+// void test_hash() {
+//     test_insert();
+//     test_delete();
+//     test_exist_resize();
+// }
+
+void test_heap() {
+    test_insert();
+    test_remove();
+}
+
+int main() {
+    test_heap();
+
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
 
 /*
 Lista
@@ -38,6 +74,7 @@ Lista
          .o
 */
 
+
 /*
 info = 3
 00000000|00000000|00000000|00000011
@@ -51,15 +88,8 @@ acc =    11101101
                            10011111
 */
 
-int hashf(void* info, int size, int size_info) {
-    char acc = 0;
-    for(int i = 0; i < size_info; i++) {
-        acc = acc ^ *((char*)info + i) ; 
-    }
-    return acc % size;
-}
-
-// int hashf(void* info, int size, int size_info) {
+// ---varianta cu int---
+//  int hashf(void* info, int size, int size_info) {
 //     int acc = 0;
 //     for(int i = 0; i < size_info; i++) {
 //         acc = acc ^ *((int*)info + i) ; 
@@ -67,15 +97,41 @@ int hashf(void* info, int size, int size_info) {
 //     return acc % size;
 // }
 
-int main() {
-    void *list   = l_create();
-    int a = 3, b = 4, c = 6, d = 8, e = 9;
-    
-    test1(list, free_int,afisare);
-    test2(list, a, b, c, afisare);
-    test3(list, a, b, c, d, free_int, afisare);
-    test4(list, a, b, c, d, comparare, afisare);
-    test5(list, a, free_int);
 
-    return 0;
+/*
+#include "list.h"
+#include "hashtable.h"
+#include "tester_hash.h"
+#include "tester_list.h"
+
+
+
+
+int comp(void* a, void* b) {
+    //0-egalitate
+	if((*(int*)a) > (*(int*)b)) 
+        return 1;
+	if((*(int*)a) < (*(int*)b)) 
+        return -1;
+	return 0;
 }
+
+int hashf(void* info, int size_table, int size_info) {
+    char acc = 0;
+    for(int i = 0; i < size_info; i++) {
+        acc = acc ^ *((char*)info + i) ; 
+    }
+    return acc % size_table;
+}
+
+static int hashf(void* key, int table_size) {
+    char* prop = (char*)key;
+    int s = 0;
+    char* nume_adresa = from_prop_to_key(prop);
+    for(int i = 0; i < strlen(nume_adresa); i++) {
+        s = s + nume_adresa[i];
+    }
+    return s % table_size;
+}
+
+*/
