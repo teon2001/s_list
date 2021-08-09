@@ -73,31 +73,45 @@ static int get_right_child(int idx) {
     return get_left_child(idx) + 1; 
 }
 
-static int get_min(int idx1, int idx2) {
-    if (idx1 < idx2)
-        return idx1;
+static int get_min(Heap* h, int idx_a, int idx_b, int (*comp)(void*, void*)) {
+    if(h->v[idx_a] == NULL) return idx_b;
+    if(h->v[idx_b] == NULL) return idx_a;
+
+    if (comp(h->v[idx_a], h->v[idx_b]) > 0)
+        return idx_b;
     else 
-        return idx2;
+        return idx_a;
 }
 
-static void siftdown(Heap* h) {
+static void print(void* val) {
+    printf("%d ", *(int*)val);
+}
+
+static void siftdown(Heap* h, int (*comp)(void*, void*)) {
     int idx = 0;
     if(h->size == 1) return;
     int left_child = get_left_child(idx);
     int right_child = get_right_child(idx);
 
-    int min = get_min(left_child, right_child);
+    int min = get_min(h, left_child, right_child, comp);
 
     while(min < h->size && h->comp(h->v[idx], h->v[min]) > 0) {
         swap(&h->v[idx], &h->v[min]);
         idx = min;
         left_child = get_left_child(idx);
         right_child = get_right_child(idx);
-        min = get_min(left_child, right_child);
+        
+        if(left_child > h->size && right_child <= h->size)
+            min = right_child;
+        else if(left_child <= h->size && right_child > h->size)
+            min = left_child;
+        else if(left_child > h->size && right_child > h->size)
+            return;
+        else min = get_min(h, left_child, right_child, comp);
     }
 }
 
-void *heap_remove(Heap* h, void (*free_info)(void*)) {
+void *heap_remove(Heap* h, void (*free_info)(void*), int (*comp)(void*, void*)) {
     if(h == NULL) 
         return NULL;
     
@@ -108,7 +122,7 @@ void *heap_remove(Heap* h, void (*free_info)(void*)) {
     h->v[h->size-1] = NULL;
     free_info(h->v[h->size-1]);
     h->size--;
-    siftdown(h);
+    siftdown(h, comp);
     return aux;
 }
 
